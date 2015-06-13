@@ -5,7 +5,6 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.LoaderManager.LoaderCallbacks;
-import android.content.ContentResolver;
 import android.content.CursorLoader;
 import android.content.Loader;
 import android.database.Cursor;
@@ -29,6 +28,10 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
+import br.edu.imed.classdiary.sync.Student;
+import br.edu.imed.classdiary.sync.StudentDAO;
+import br.edu.imed.classdiary.sync.SyncAdapter;
+
 
 /**
  * A login screen that offers login via email/password.
@@ -40,7 +43,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
      * TODO: remove after connecting to a real authentication system.
      */
     private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "foo@example.com:hello", "bar@example.com:world"
+            "gelias@ge.br:123456", "bar@example.com:world"
     };
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
@@ -150,7 +153,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
 
     private boolean isPasswordValid(String password) {
         //TODO: Replace this with your own logic
-        return password.length() > 4;
+        return password.length() > 0;
     }
 
     /**
@@ -249,17 +252,16 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
      */
     public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
 
-        private final String mEmail;
-        private final String mPassword;
+        private final String email;
+        private final String password;
 
         UserLoginTask(String email, String password) {
-            mEmail = email;
-            mPassword = password;
+            this.email = email;
+            this.password = password;
         }
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            // TODO: attempt authentication against a network service.
 
             try {
                 // Simulate network access.
@@ -268,15 +270,19 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                 return false;
             }
 
-            for (String credential : DUMMY_CREDENTIALS) {
-                String[] pieces = credential.split(":");
-                if (pieces[0].equals(mEmail)) {
-                    // Account exists, return true if the password matches.
-                    return pieces[1].equals(mPassword);
+            SyncAdapter adapter = new SyncAdapter();
+            boolean isValidLogin = adapter.checkLogin(email, password);
+            if(isValidLogin){
+                Student student = adapter.loadPerson(email);
+                System.out.println(student.getName());
+                StudentDAO dao = new StudentDAO(getApplicationContext());
+                try {
+                    dao.insert(student);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
 
-            // TODO: register the new account here.
             return true;
         }
 
